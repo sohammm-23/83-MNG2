@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock Concert Stadium</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 9999;
+            flex-direction: column;
+        }
+        #loading-bar {
+            width: 300px;
+            height: 4px;
+            background: #333;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        #progress {
+            height: 100%;
+            width: 0%;
+            background: #ff3300;
+            transition: width 0.3s;
+        }
+        .stadium-tier {
+            color: #2A2D34;
+        }
+        .stadium-seat {
+            width: 0.8;
+            height: 0.5;
+            depth: 0.8;
+            color: #3A5199;
+        }
+        
+        /* New Chatbox Styles */
+        #chat-container {
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            width: 300px;
+            height: 400px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            color: white;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+            border: 1px solid #ff3300;
+            overflow: hidden;
+        }
+        #chat-header {
+            background-color: rgba(255, 51, 0, 0.8);
+            padding: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+        #chat-messages {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        #chat-input-container {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #444;
+        }
+        #chat-input {
+            flex-grow: 1;
+            padding: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+        #chat-send {
+            padding: 8px 15px;
+            background-color: #ff3300;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .chat-message {
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        .chat-message .username {
+            font-weight: bold;
+            color: #ff3300;
+        }
+        .chat-message .timestamp {
+            font-size: 0.8em;
+            color: #aaa;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <h2>Loading Rock Concert...</h2>
+        <div id="loading-bar"><div id="progress"></div></div>
+    </div>
+
+    <!-- New Chatbox HTML -->
+    <div id="chat-container">
+        <div id="chat-header">Concert Chat</div>
+        <div id="chat-messages">
+            <div class="chat-message">
+                <span class="username">System:</span>
+                <span class="timestamp">Just now</span>
+                <div class="text">Welcome to the VR concert! Chat with other fans here.</div>
+            </div>
+        </div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type your message...">
+            <button id="chat-send">Send</button>
+        </div>
+    </div>
+
+    <a-scene loading-screen="enabled: false">
+        <!-- Assets -->
+        <a-assets>
+            <video id="concertVideo" src="travis.mp4" autoplay loop crossorigin="anonymous"></video>
+        </a-assets>
+
+        <!-- Simple Dark Environment -->
+        <a-sky color="#000000"></a-sky>
+        
+        <!-- Enhanced Stars and Moon -->
+        <a-entity id="night-sky">
+            <!-- Moon -->
+            <a-sphere position="25 20 -40" 
+                     radius="4" 
+                     color="#F5F3CE" 
+                     emissive="#F5F3CE" 
+                     emissive-intensity="0.9">
+            </a-sphere>
+            
+            <!-- Stars (created with JavaScript) -->
+            <a-entity id="stars-container"></a-entity>
+        </a-entity>
+
+        <!-- Stadium Structure -->
+        <a-entity id="stadium">
+            <!-- Stadium Floor -->
+            <a-circle position="0 0 -10" radius="50" color="#111" rotation="-90 0 0"></a-circle>
+            
+            <!-- Stadium Seating -->
+            <a-torus position="0 3 -10" radius="45" radius-tubular="5" color="#222" rotation="-90 0 0"></a-torus>
+            
+            <!-- Lower Tier Seating (Front) -->
+            <a-ring class="stadium-tier" radius-inner="35" radius-outer="45" segments-theta="180" 
+                   theta-start="90" position="0 2 -10" rotation="0 180 0">
+                <a-box class="stadium-seat" repeat="40 1 1" position="0 0.5 0"></a-box>
+                <!-- Front Lower Tier Crowd -->
+                <a-entity position="30 0.8 -5" rotation="0 180 0">
+                    <a-gltf-model src="crowd.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+                </a-entity>
+                <a-entity position="25 0.8 -8" rotation="0 180 0">
+                    <a-gltf-model src="crowd.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+                </a-entity>
+                <a-entity position="20 0.8 -10" rotation="0 180 0">
+                    <a-gltf-model src="crowd.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+                </a-entity>
+                <a-entity position="-20 0.8 -10" rotation="0 180 0">
+                    <a-gltf-model src="crowd.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+                </a-entity>
+                <a-entity position="-25 0.8 -8" rotation="0 180 0">
+                    <a-gltf-model src="crowd.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+                </a-entity>
+                <a-entity position="-30 0.8 -5" rotation="0 180 0">
+                    <a-gltf-model src="crowd.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+                </a-entity>
+            </a-ring>
+            
+            <!-- Lower Tier Seating (Back) -->
+            <a-ring class="stadium-tier" radius-inner="35" radius-outer="45" segments-theta="180" 
+                   theta-start="270" position="0 2 -10" rotation="0 0 0">
+                <a-box class="stadium-seat" repeat="40 1 1" position="0 0.5 0"></a-box>
+                <!-- Back Lower Tier Crowd -->
+                <a-entity position="30 0.8 5" rotation="0 0 0">
+                    <a-gltf-model src="crowd.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+                </a-entity>
+                <a-entity position="25 0.8 8" rotation="0 0 0">
+                    <a-gltf-model src="crowd.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+                </a-entity>
+                <a-entity position="20 0.8 10" rotation="0 0 0">
+                    <a-gltf-model src="crowd.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+                </a-entity>
+                <a-entity position="-20 0.8 10" rotation="0 0 0">
+                    <a-gltf-model src="crowd.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+                </a-entity>
+                <a-entity position="-25 0.8 8" rotation="0 0 0">
+                    <a-gltf-model src="crowd.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+                </a-entity>
+                <a-entity position="-30 0.8 5" rotation="0 0 0">
+                    <a-gltf-model src="crowd.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+                </a-entity>
+            </a-ring>
+        </a-entity>
+        
+        <!-- Stage Platform (kept) -->
+        <a-box position="0 0 -10" width="12" height="1" depth="6" color="#444"></a-box>
+        
+        <!-- Video Screen -->
+        <a-plane position="0 5 -15" width="16" height="9" material="shader: standard; src: #concertVideo;">
+        </a-plane>
+        
+        <!-- Main Performer (elevated on stage) -->
+        <a-entity position="1 1.5 -10" rotation="0 270 0">
+            <a-gltf-model src="travis_scott.glb" scale="0.8 0.8 0.8"></a-gltf-model>
+        </a-entity>
+        
+        <!-- Lighting -->
+        <a-light type="directional" color="#fff" intensity="0.5" position="-0.5 1 -0.5"></a-light>
+        <a-light type="point" color="#ff3300" intensity="1" position="0 5 -10"></a-light>
+        
+        <!-- Camera -->
+        <a-entity camera look-controls wasd-controls position="0 3 5">
+            <a-cursor></a-cursor>
+        </a-entity>
+    </a-scene>
+
+    <script>
+        // Create enhanced stars with twinkling effect
+        function createStars() {
+            const starsContainer = document.getElementById('stars-container');
+            for (let i = 0; i < 300; i++) {
+                const star = document.createElement('a-sphere');
+                const size = 0.05 + Math.random() * 0.1;
+                const x = (Math.random() - 0.5) * 100;
+                const y = (Math.random() - 0.5) * 50 + 20;
+                const z = -50 - Math.random() * 50;
+                
+                star.setAttribute('position', `${x} ${y} ${z}`);
+                star.setAttribute('radius', size);
+                star.setAttribute('color', '#FFFFFF');
+                star.setAttribute('emissive', '#FFFFFF');
+                star.setAttribute('emissive-intensity', 0.8 + Math.random());
+                
+                // Add twinkling animation
+                star.setAttribute('animation', {
+                    property: 'material.emissiveIntensity',
+                    to: 0.2,
+                    dir: 'alternate',
+                    dur: 2000 + Math.random() * 3000,
+                    loop: true
+                });
+                
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Loading management
+        const loadingScreen = document.getElementById('loading');
+        const progressBar = document.getElementById('progress');
+        
+        // When scene loads
+        document.querySelector('a-scene').addEventListener('loaded', function() {
+            createStars();
+            
+            // Animate progress bar
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 5;
+                progressBar.style.width = `${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    loadingScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingScreen.style.display = 'none';
+                    }, 500);
+                }
+            }, 50);
+        });
+
+        // Error handling
+        document.querySelector('a-scene').addEventListener('error', function(e) {
+            console.error('Scene error:', e.detail);
+            loadingScreen.innerHTML = `
+                <h2>Error Loading Scene</h2>
+                <p>${e.detail.message || 'Check console for details'}</p>
+                <button onclick="window.location.reload()" 
+                        style="margin-top: 20px; padding: 10px 20px; background: #ff3300; color: white; border: none; cursor: pointer;">
+                    Try Again
+                </button>
+            `;
+        });
+        
+        // Chatbox functionality (new code)
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatInput = document.getElementById('chat-input');
+            const chatMessages = document.getElementById('chat-messages');
+            const chatSend = document.getElementById('chat-send');
+            
+            function addMessage(username, text) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'chat-message';
+                messageDiv.innerHTML = `
+                    <span class="username">${username}:</span>
+                    <span class="timestamp">${timeString}</span>
+                    <div class="text">${text}</div>
+                `;
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (message) {
+                    // In a real app, you would send this to a server
+                    addMessage('You', message);
+                    chatInput.value = '';
+                    
+                    // Simulate response (in a real app, this would come from other users)
+                    setTimeout(() => {
+                        const responses = [
+                            "That's awesome!",
+                            "The concert is lit!",
+                            "Travis is killing it!",
+                            "🔥🔥🔥",
+                            "Who else is loving this?",
+                            "Best VR concert ever!"
+                        ];
+                        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                        addMessage('Fan', randomResponse);
+                    }, 1000 + Math.random() * 2000);
+                }
+            }
+            
+            chatSend.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Add some initial messages to make it look active
+            setTimeout(() => {
+                addMessage('Fan', "This concert is amazing!");
+            }, 1500);
+            
+            setTimeout(() => {
+                addMessage('VR_Lover', "The visuals are insane!");
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

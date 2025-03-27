@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConcertVR - Immersive Virtual Concerts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .hero-bg {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                        url('https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        /* 3D Stage Container */
+        .stage-container {
+            perspective: 1000px;
+            transform-style: preserve-3d;
+            transition: all 0.5s ease;
+        }
+        
+        .stage {
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+            position: relative;
+        }
+        
+        .stage:hover {
+            transform: translateZ(20px);
+        }
+        
+        .stage-front {
+            position: relative;
+            backface-visibility: hidden;
+        }
+        
+        .stage-platform {
+            transform: rotateX(60deg) translateZ(-50px);
+            background: linear-gradient(135deg, #333 0%, #111 100%);
+            border-radius: 5px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        
+        .stage-lights {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s infinite alternate;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.7; }
+        }
+        
+        /* Search results */
+        .search-results {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #1f2937;
+            border-radius: 0 0 1rem 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+        .search-item {
+            padding: 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #374151;
+        }
+        .search-item:hover {
+            background: #374151;
+        }
+        .no-results {
+            padding: 1rem;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-gray-900 bg-opacity-90 backdrop-blur-md fixed w-full z-10 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <a href="index.html" class="text-2xl font-bold text-orange-500">Concert<span class="text-white">VR</span></a>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="index.html" class="px-3 py-2 rounded-md text-sm font-medium text-white bg-orange-500">Home</a>
+                        <a href="concerts.html" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white">Concerts</a>
+                        <a href="artists.html" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white">Artists</a>
+                        <a href="avatar-scan.html" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white">Avatar Scan</a>
+                        <a href="#about" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white">About</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero-bg h-screen flex items-center pt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-6xl font-bold mb-6">Experience Concerts Like Never Before</h1>
+            <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">Immerse yourself in virtual reality concerts from your favorite artists in stunning 3D environments</p>
+            
+            <!-- Search Bar -->
+            <div class="max-w-2xl mx-auto relative">
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="Search concerts, artists, or genres..." 
+                           class="w-full py-4 px-6 rounded-full bg-gray-800 bg-opacity-70 text-white 
+                                  border border-gray-700 focus:border-orange-500 focus:outline-none 
+                                  focus:ring-2 focus:ring-orange-500 transition-all">
+                    <button id="searchButton" class="absolute right-2 top-2 bg-orange-500 text-white p-3 rounded-full 
+                                  hover:bg-orange-600 transition-colors">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div id="searchResults" class="search-results"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 3D Stages Section -->
+    <section id="stages" class="py-16 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-3xl font-bold mb-12 text-center">Choose Your Stage</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <!-- Rock Stage -->
+                <div class="stage-container">
+                    <a href="rock.html" class="stage block h-96 relative">
+                        <div class="stage-front h-full w-full rounded-xl overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" 
+                                 alt="Rock Stage" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+                            <div class="stage-lights"></div>
+                            <div class="stage-platform absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3/4 h-32"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-6 text-center">
+                                <h3 class="text-3xl font-bold mb-2">ROCK STAGE</h3>
+                                <p class="text-gray-300">Experience the power of rock in immersive 3D</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Pop Stage -->
+                <div class="stage-container">
+                    <a href="pop.html" class="stage block h-96 relative">
+                        <div class="stage-front h-full w-full rounded-xl overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" 
+                                 alt="Pop Stage" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+                            <div class="stage-lights"></div>
+                            <div class="stage-platform absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3/4 h-32"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-6 text-center">
+                                <h3 class="text-3xl font-bold mb-2">POP STAGE</h3>
+                                <p class="text-gray-300">Dance to the hottest pop hits in virtual reality</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Hip Hop Stage -->
+                <div class="stage-container">
+                    <a href="rap.html" class="stage block h-96 relative">
+                        <div class="stage-front h-full w-full rounded-xl overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80" 
+                                 alt="Hip Hop Stage" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+                            <div class="stage-lights"></div>
+                            <div class="stage-platform absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3/4 h-32"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-6 text-center">
+                                <h3 class="text-3xl font-bold mb-2">HIP HOP STAGE</h3>
+                                <p class="text-gray-300">Front row seats to the hottest hip hop artists</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Artists Section -->
+    <section id="featured-artists" class="py-16 px-4 sm:px-6 lg:px-8 bg-gray-800">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-3xl font-bold mb-8">Featured Artists</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                <!-- Artist 1 -->
+                <a href="artists.html#artist1" class="group text-center">
+                    <div class="relative mb-4">
+                        <img src="https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80" 
+                             alt="Artist 1" class="w-full h-40 object-cover rounded-full group-hover:ring-4 group-hover:ring-orange-500 transition-all">
+                    </div>
+                    <h3 class="font-bold group-hover:text-orange-500 transition-colors">Artist One</h3>
+                    <p class="text-sm text-gray-400">Hip Hop</p>
+                </a>
+                
+                <!-- Artist 2 -->
+                <a href="artists.html#artist2" class="group text-center">
+                    <div class="relative mb-4">
+                        <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" 
+                             alt="Artist 2" class="w-full h-40 object-cover rounded-full group-hover:ring-4 group-hover:ring-orange-500 transition-all">
+                    </div>
+                    <h3 class="font-bold group-hover:text-orange-500 transition-colors">Artist Two</h3>
+                    <p class="text-sm text-gray-400">Pop</p>
+                </a>
+                
+                <!-- Artist 3 -->
+                <a href="artists.html#artist3" class="group text-center">
+                    <div class="relative mb-4">
+                        <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" 
+                             alt="Artist 3" class="w-full h-40 object-cover rounded-full group-hover:ring-4 group-hover:ring-orange-500 transition-all">
+                    </div>
+                    <h3 class="font-bold group-hover:text-orange-500 transition-colors">Artist Three</h3>
+                    <p class="text-sm text-gray-400">Rock</p>
+                </a>
+                
+                <!-- Artist 4 -->
+                <a href="artists.html#artist4" class="group text-center">
+                    <div class="relative mb-4">
+                        <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" 
+                             alt="Artist 4" class="w-full h-40 object-cover rounded-full group-hover:ring-4 group-hover:ring-orange-500 transition-all">
+                    </div>
+                    <h3 class="font-bold group-hover:text-orange-500 transition-colors">Artist Four</h3>
+                    <p class="text-sm text-gray-400">Electronic</p>
+                </a>
+                
+                <!-- Artist 5 -->
+                <a href="artists.html#artist5" class="group text-center">
+                    <div class="relative mb-4">
+                        <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80" 
+                             alt="Artist 5" class="w-full h-40 object-cover rounded-full group-hover:ring-4 group-hover:ring-orange-500 transition-all">
+                    </div>
+                    <h3 class="font-bold group-hover:text-orange-500 transition-colors">Artist Five</h3>
+                    <p class="text-sm text-gray-400">R&B</p>
+                </a>
+            </div>
+            
+            <div class="mt-12 text-center">
+                <a href="artists.html" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full text-white bg-orange-500 hover:bg-orange-600 transition-colors">
+                    View All Artists
+                    <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-16 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h2 class="text-3xl font-bold mb-6">About ConcertVR</h2>
+                    <p class="text-lg mb-4">ConcertVR brings you the most immersive virtual reality concert experiences from the comfort of your home. Our platform uses cutting-edge VR technology to make you feel like you're really there, front row at the hottest shows.</p>
+                    <p class="text-lg mb-6">With 360° views, spatial audio, and interactive elements, you'll experience live music like never before. No travel, no crowds, just pure musical magic.</p>
+                    <a href="#" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full text-white bg-orange-500 hover:bg-orange-600 transition-colors">
+                        Learn More
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+                <div class="relative h-96 bg-gray-800 rounded-xl overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" 
+                         alt="VR Experience" class="w-full h-full object-cover">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="py-16 px-4 sm:px-6 lg:px-8 bg-gray-800">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-3xl font-bold mb-4">Stay Updated</h2>
+            <p class="text-lg mb-8 max-w-2xl mx-auto">Subscribe to our newsletter to get notified about new concerts, exclusive VR experiences, and special offers.</p>
+            
+            <form class="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
+                <input type="email" placeholder="Your email address" 
+                       class="flex-grow px-4 py-3 rounded-full bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <button type="submit" class="px-6 py-3 rounded-full bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors">
+                    Subscribe
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold text-orange-500 mb-4">ConcertVR</h3>
+                    <p class="text-gray-400">Immersive virtual reality concert experiences for music lovers worldwide.</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="index.html" class="text-gray-400 hover:text-white transition-colors">Home</a></li>
+                        <li><a href="concerts.html" class="text-gray-400 hover:text-white transition-colors">Concerts</a></li>
+                        <li><a href="artists.html" class="text-gray-400 hover:text-white transition-colors">Artists</a></li>
+                        <li><a href="avatar-scan.html" class="text-gray-400 hover:text-white transition-colors">Avatar Scan</a></li>
+                        <li><a href="#about" class="text-gray-400 hover:text-white transition-colors">About</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-4">Support</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Contact Us</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-4">Connect</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors text-2xl">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors text-2xl">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors text-2xl">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors text-2xl">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-500">
+                <p>&copy; 2023 ConcertVR. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mock database of permitted search terms and their associated pages
+        const concertDatabase = [
+            { 
+                term: 'travis scott', 
+                display: 'Travis Scott', 
+                type: 'artist',
+                link: 'artists.html#travis-scott'
+            },
+            { 
+                term: 'xxxtentacion', 
+                display: 'XXXTentacion', 
+                type: 'artist',
+                link: 'artists.html#xxxtentacion'
+            },
+            { 
+                term: 'rock', 
+                display: 'Rock Concerts', 
+                type: 'genre',
+                link: 'rock-concert.html'
+            },
+            { 
+                term: 'pop', 
+                display: 'Pop Concerts', 
+                type: 'genre',
+                link: 'pop-concert.html'
+            },
+            { 
+                term: 'rap', 
+                display: 'Rap Concerts', 
+                type: 'genre',
+                link: 'hiphop-concert.html'
+            }
+        ];
+
+        // Permitted search terms (case insensitive)
+        const permittedTerms = [
+            'travis scott',
+            'xxxtentacion',
+            'rock',
+            'pop',
+            'rap',
+            'hip hop'
+        ];
+
+        // DOM elements
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const searchResults = document.getElementById('searchResults');
+
+        // Search function
+        function performSearch(query) {
+            // Clear previous results
+            searchResults.innerHTML = '';
+            
+            // Normalize the query
+            const normalizedQuery = query.toLowerCase().trim();
+            
+            // Check if query is empty
+            if (!normalizedQuery) {
+                searchResults.style.display = 'none';
+                return;
+            }
+
+            // Check if query is permitted
+            const isPermitted = permittedTerms.some(term => 
+                term.includes(normalizedQuery) || normalizedQuery.includes(term)
+            );
+
+            if (!isPermitted) {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'No results found. Try searching for: Travis Scott, XXXTentacion, Rock, Pop, or Hip Hop';
+                searchResults.appendChild(noResults);
+                searchResults.style.display = 'block';
+                return;
+            }
+
+            // Filter database for matches
+            const results = concertDatabase.filter(item => 
+                item.term.includes(normalizedQuery) || 
+                normalizedQuery.includes(item.term)
+            );
+
+            // Display results
+            if (results.length > 0) {
+                results.forEach(result => {
+                    const item = document.createElement('a');
+                    item.className = 'search-item';
+                    item.href = result.link;
+                    item.innerHTML = `
+                        <div class="font-bold">${result.display}</div>
+                        <div class="text-sm text-gray-400 capitalize">${result.type}</div>
+                    `;
+                    searchResults.appendChild(item);
+                });
+                searchResults.style.display = 'block';
+            } else {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'No exact matches found. Try searching for: Travis Scott, XXXTentacion, Rock, Pop, or Hip Hop';
+                searchResults.appendChild(noResults);
+                searchResults.style.display = 'block';
+            }
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', (e) => {
+            performSearch(e.target.value);
+        });
+
+        searchButton.addEventListener('click', () => {
+            performSearch(searchInput.value);
+        });
+
+        // Hide results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.relative')) {
+                searchResults.style.display = 'none';
+            }
+        });
+
+        // Add 3D effect to stages on mouse move
+        document.querySelectorAll('.stage-container').forEach(container => {
+            container.addEventListener('mousemove', (e) => {
+                const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+                const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+                container.querySelector('.stage').style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg) translateZ(20px)`;
+            });
+            
+            container.addEventListener('mouseleave', () => {
+                container.querySelector('.stage').style.transform = 'translateZ(0)';
+            });
+        });
+    </script>
+</body>
+</html>

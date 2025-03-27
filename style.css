@@ -1,0 +1,47 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+.ui-element {
+    cursor: pointer;
+}
+
+.reaction-button:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s;
+}
+
+/* VR mode button styling */
+.a-enter-vr-button {
+    background-color: #4CAF50 !important;
+    color: white !important;
+    border-radius: 20px !important;
+    padding: 10px 20px !important;
+}
+
+/* Loading screen styling */
+.loading-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #000;
+    color: #fff;
+    font-size: 24px;
+}
+
+/* Chat input styling */
+.chat-input {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    padding: 10px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    z-index: 9999;
+}
