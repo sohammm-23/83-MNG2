@@ -1,4 +1,15 @@
 # 83-MNG2
+Project structure:ConcertVR/
+├── index.html            
+├── concert.html          
+├── avatar-scan.html    
+├── assets/
+│   ├── css/            
+│   ├── js/               
+│   ├── models/          
+│   └── images/         
+├── README.md          
+└── .gitignore            
 Demo video:https://drive.google.com/drive/folders/1jH1D_jxtwUwY5aU3fY_TmB1MOUfM4zie?usp=sharing
 Project ppt:https://www.canva.com/design/DAGi0pe-Z9s/TCIL1Kw2_IoQlcOp8iRuww/edit?utm_content=DAGi0pe-Z9s&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
 
