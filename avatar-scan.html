@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Avatar Creator | ConcertVR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Ready Player Me SDK -->
+    <script src="https://cdn.readyplayer.me/loader.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #111827;
+            font-family: 'Inter', sans-serif;
+        }
+        #avatar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+        #header {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            text-align: center;
+        }
+        #controls {
+            position: absolute;
+            bottom: 40px;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .control-btn {
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .control-btn:hover {
+            background: rgba(249, 115, 22, 0.8);
+            transform: scale(1.1);
+        }
+        #avatar-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        #name-input {
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            width: 300px;
+            text-align: center;
+            outline: none;
+            transition: all 0.2s;
+        }
+        #name-input:focus {
+            border-color: rgba(249, 115, 22, 0.5);
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+        }
+        #save-btn {
+            background: rgba(249, 115, 22, 0.9);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #save-btn:hover {
+            background: rgba(249, 115, 22, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Navigation Buttons */
+        #nav-buttons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20;
+            display: flex;
+            gap: 10px;
+        }
+        .nav-btn {
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover {
+            background: rgba(55, 65, 81, 0.8);
+        }
+        .nav-btn i {
+            margin-right: 6px;
+        }
+        
+        /* Professional Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            background: #1f2937;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transform: translateY(0);
+            animation: slideUp 0.4s ease;
+        }
+        .modal-header {
+            padding: 20px;
+            background: #111827;
+            border-bottom: 1px solid #374151;
+            position: relative;
+        }
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+            margin: 0;
+            text-align: center;
+        }
+        .modal-body {
+            padding: 25px;
+            text-align: center;
+            color: #d1d5db;
+            font-size: 16px;
+        }
+        .modal-footer {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            border-top: 1px solid #374151;
+        }
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 100px;
+        }
+        .modal-btn-primary {
+            background: #f97316;
+            color: white;
+            border: none;
+        }
+        .modal-btn-primary:hover {
+            background: #ea580c;
+        }
+        .modal-btn-secondary {
+            background: transparent;
+            color: #9ca3af;
+            border: 1px solid #4b5563;
+        }
+        .modal-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { 
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Full-screen Avatar Builder -->
+    <div id="avatar-container">
+        <!-- Navigation Buttons -->
+        <div id="nav-buttons">
+            <button id="home-btn" class="nav-btn">
+                <i class="fas fa-home"></i> Home
+            </button>
+        </div>
+        
+        <!-- Header -->
+        <div id="header">
+            <h1 class="text-4xl font-bold text-white mb-2">Create Your Concert Avatar</h1>
+            <input type="text" id="name-input" placeholder="Enter your avatar name">
+        </div>
+        
+        <!-- Ready Player Me Iframe -->
+        <iframe id="avatar-frame" src="https://readyplayer.me/avatar?frameApi"></iframe>
+        
+        <!-- Controls -->
+        <div id="controls">
+            <button id="save-btn">Save & Continue</button>
+        </div>
+    </div>
+
+    <!-- Professional Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Success</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">Avatar saved successfully!</p>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-cancel" class="modal-btn modal-btn-secondary">Back</button>
+                <button id="modal-confirm" class="modal-btn modal-btn-primary">To Concert</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const iframe = document.getElementById('avatar-frame');
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const modalConfirm = document.getElementById('modal-confirm');
+            const modalCancel = document.getElementById('modal-cancel');
+            const homeBtn = document.getElementById('home-btn');
+            let avatarUrl = null;
+            
+            // Show modal function
+            function showModal(title, message, showCancel = true) {
+                modalTitle.textContent = title;
+                modalMessage.textContent = message;
+                modalCancel.style.display = showCancel ? 'block' : 'none';
+                modal.style.display = 'flex';
+            }
+            
+            // Hide modal function
+            function hideModal() {
+                modal.style.display = 'none';
+            }
+            
+            // Home button click - go to home page
+            homeBtn.addEventListener('click', function() {
+                window.location.href = 'index.html';
+            });
+            
+            // Modal confirm button - go to concert page
+            modalConfirm.addEventListener('click', function() {
+                window.location.href = 'concerts.html'; // Change to your concert page URL
+            });
+            
+            // Modal cancel button
+            modalCancel.addEventListener('click', hideModal);
+            
+            // Listen for messages from Ready Player Me
+            window.addEventListener('message', subscribe);
+            document.addEventListener('message', subscribe);
+            
+            function subscribe(event) {
+                const json = parse(event);
+                
+                if (json?.source !== 'readyplayerme') {
+                    return;
+                }
+                
+                // Subscribe to events once the frame is ready
+                if (json.eventName === 'v1.frame.ready') {
+                    iframe.contentWindow.postMessage(
+                        {
+                            target: 'readyplayerme',
+                            type: 'subscribe',
+                            eventName: 'v1.avatar.set'
+                        },
+                        '*'
+                    );
+                }
+                
+                // Get avatar GLB URL when set
+                if (json.eventName === 'v1.avatar.set') {
+                    avatarUrl = json.data.url;
+                    console.log('Avatar URL:', avatarUrl);
+                }
+            }
+            
+            function parse(event) {
+                try {
+                    return JSON.parse(event.data);
+                } catch (error) {
+                    return null;
+                }
+            }
+            
+            // Save button handler
+            document.getElementById('save-btn').addEventListener('click', function() {
+                const avatarName = document.getElementById('name-input').value.trim();
+                
+                if (!avatarName) {
+                    showModal('Missing Information', 'Please enter an avatar name', false);
+                    return;
+                }
+                
+                if (!avatarUrl) {
+                    showModal('Not Ready', 'Please finish creating your avatar first', false);
+                    return;
+                }
+                
+                // In a real app, you would save the avatarUrl and name to your database
+                console.log('Saving avatar:', {
+                    name: avatarName,
+                    url: avatarUrl
+                });
+                
+                showModal('Success', `Avatar "${avatarName}" saved successfully!`);
+            });
+        });
+    </script>
+</body>
+</html>
